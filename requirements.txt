@@ -1,0 +1,12 @@
+flask
+flask-sqlalchemy
+flask-migrate
+Werkzeug
+python-dotenv
+cryptography
+flask-login
+flask-wtf
+gunicorn
+boto3
+psycopg2-binary
+sqlalchemy
