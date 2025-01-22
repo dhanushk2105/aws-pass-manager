@@ -1,0 +1,33 @@
+version: 1
+applications:
+  - frontend:
+      phases:
+        preBuild:
+          commands:
+            - pip install --upgrade pip
+            - pip install -r requirements.txt
+        build:
+          commands:
+            - echo "No build required for Flask application"
+      artifacts:
+        baseDirectory: .
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
+    appRoot: .
+    backend:
+      phases:
+        build:
+          commands:
+            - python migrations.py
+    environmentVariables:
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_REGION
+      - S3_BUCKET
+      - DB_USER
+      - DB_PASSWORD
+      - DB_HOST
+      - DB_NAME
