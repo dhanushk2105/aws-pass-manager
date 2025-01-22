@@ -12,7 +12,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # AWS Configuration
-    AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
-    AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
-    AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')
+    AWS_ACCESS_KEY_ID = os.environ.get('ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = os.environ.get('SECRET_ACCESS_KEY')
+    AWS_REGION = os.environ.get('REGION', 'us-east-1')
     S3_BUCKET = os.environ.get('S3_BUCKET')
