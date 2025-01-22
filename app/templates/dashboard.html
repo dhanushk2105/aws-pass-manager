@@ -1,14 +1,14 @@
-<!-- templates/main/dashboard.html -->
+<!-- templates/dashboard.html -->
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
 <div class="container mx-auto px-4">
     <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold">Your Credentials</h1>
+        <h1 class="text-2xl font-bold">Your Passwords</h1>
         <button onclick="openAddModal()" 
             class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
-            Add New Credential
+            Add New Password
         </button>
     </div>
 
@@ -18,11 +18,11 @@
             <div class="flex justify-between items-start mb-2">
                 <h3 class="text-lg font-semibold">{{ credential.website_name }}</h3>
                 <div class="flex space-x-2">
-                    <button onclick="copyToClipboard('{{ credential.password }}')"
+                    <button onclick="getPassword('{{credential.id}}')"
                         class="text-blue-500 hover:text-blue-700">
-                        Copy
+                        Get Password
                     </button>
-                    <button onclick="deleteCredential('{{ credential.id }}')"
+                    <button onclick="deleteCredential('{{credential.id}}')"
                         class="text-red-500 hover:text-red-700">
                         Delete
                     </button>
@@ -34,13 +34,9 @@
                     {{ credential.website_url }}
                 </a>
             </div>
-            <div class="mb-2">
-                <span class="text-gray-600 text-sm">Username:</span>
-                <span class="text-sm ml-1">{{ credential.username }}</span>
-            </div>
             {% if credential.image_data %}
             <div class="mb-2">
-                <img src="data:image/jpeg;base64,{{ credential.image_data }}" 
+                <img src="data:image/png;base64,{{ credential.image_data }}" 
                      alt="Credential Image" class="w-full h-32 object-cover rounded">
             </div>
             {% endif %}
@@ -54,11 +50,11 @@
     </div>
 </div>
 
-<!-- Add Credential Modal -->
+<!-- Add Password Modal -->
 <div id="addModal" class="hidden fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full">
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-bold">Add New Credential</h3>
+            <h3 class="text-lg font-bold">Add New Password</h3>
             <button onclick="closeAddModal()" class="text-gray-600 hover:text-gray-800">&times;</button>
         </div>
         <form id="credentialForm" enctype="multipart/form-data">
@@ -101,81 +97,101 @@
                 <label class="block text-gray-700 text-sm font-bold mb-2" for="image">
                     Image
                 </label>
-                <input type="file" name="image" id="image" accept="image/*"
+                <input type="file" name="image" id="image" accept="image/*" required
                     class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500">
             </div>
             <button type="submit"
-                class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 focus:outline-none">
-                Save Credential
+                class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600">
+                Save Password
             </button>
         </form>
     </div>
 </div>
-
 {% endblock %}
 
 {% block scripts %}
 <script>
-    function openAddModal() {
-        document.getElementById('addModal').classList.remove('hidden');
-    }
+function openAddModal() {
+    document.getElementById('addModal').classList.remove('hidden');
+}
 
-    function closeAddModal() {
-        document.getElementById('addModal').classList.add('hidden');
-        document.getElementById('credentialForm').reset();
-    }
+function closeAddModal() {
+    document.getElementById('addModal').classList.add('hidden');
+    document.getElementById('credentialForm').reset();
+}
 
-    async function copyToClipboard(text) {
-        try {
-            await navigator.clipboard.writeText(text);
-            alert('Copied to clipboard!');
-        } catch (err) {
-            console.error('Failed to copy:', err);
-        }
-    }
-
-    async function deleteCredential(id) {
-        if (!confirm('Are you sure you want to delete this credential?')) {
-            return;
-        }
-
-        try {
-            const response = await fetch(`/credential/${id}`, {
-                method: 'DELETE',
-            });
-            
-            if (response.ok) {
-                location.reload();
-            } else {
-                alert('Failed to delete credential');
-            }
-        } catch (err) {
-            console.error('Error:', err);
-            alert('An error occurred while deleting the credential');
-        }
-    }
-
-    document.getElementById('credentialForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
+async function getPassword(id) {
+    try {
+        const response = await fetch(`/credential/${id}/get-password`);
+        const data = await response.json();
         
-        const formData = new FormData(e.target);
-        
-        try {
-            const response = await fetch('/credential', {
-                method: 'POST',
-                body: formData
-            });
-            
-            if (response.ok) {
-                closeAddModal();
-                location.reload();
-            } else {
-                alert('Failed to add credential');
-            }
-        } catch (err) {
-            console.error('Error:', err);
-            alert('An error occurred while adding the credential');
+        if (data.success) {
+            await navigator.clipboard.writeText(data.password);
+            showNotification('Password copied to clipboard!', 'success');
+        } else {
+            throw new Error(data.error || 'Failed to retrieve password');
         }
-    });
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Failed to retrieve password', 'error');
+    }
+}
+
+async function deleteCredential(id) {
+    if (!confirm('Are you sure you want to delete this credential?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/credential/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            throw new Error('Failed to delete credential');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Failed to delete credential', 'error');
+    }
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `fixed bottom-4 right-4 px-4 py-2 rounded-lg ${
+        type === 'success' ? 'bg-green-500' : 'bg-red-500'
+    } text-white`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+document.getElementById('credentialForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    
+    try {
+        const response = await fetch('/credential', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            closeAddModal();
+            location.reload();
+        } else {
+            throw new Error('Failed to add credential');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Failed to add credential', 'error');
+    }
+});
 </script>
 {% endblock %}
